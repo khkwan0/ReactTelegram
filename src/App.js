@@ -16,7 +16,7 @@ function App() {
   const [error, setError] = React.useState('')
   const [token, setToken] = React.useState('')
 //  console.log(client)
-
+  
   const botnameRef = React.useRef('')
 
   React.useEffect(() => {
@@ -25,7 +25,7 @@ function App() {
 
   React.useEffect(() => {
     client.onUpdate = update => {
-      console.log('update', update)
+//      console.log('update', update)
       if (update.error) {
         console.error(update.error)
       }
@@ -131,8 +131,12 @@ function App() {
     }
   }
   async function send(request) {
-    console.log(request)
-    client.send(request)
+    try {
+      console.log(request)
+      client.send(request)
+    } catch (e) {
+      console.log(e)
+    }
   }
 
   async function sendToBotFather() {
@@ -193,6 +197,12 @@ function App() {
     }
   }
 
+  async function handleLogout() {
+    send({
+      '@type': 'logOut'
+    })
+  }
+
   return (
     <div className="App">
       <header className="App-header">
@@ -225,6 +235,9 @@ function App() {
             <p>{token}</p>
           </div>
         )}
+        <button onClick={handleLogout}>
+          Logout
+        </button>
 
         <img src={logo} className="App-logo" alt="logo" />
       </header>
