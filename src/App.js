@@ -4,7 +4,7 @@ import TdClient from 'tdweb_1.8.44/dist/tdweb';
 import React from 'react'
 import {config} from './config.js'
 
-const client = new TdClient({readOnly: false, logVerbosityLevel: 1, fastUpdating: true, jsLogVerbosityLevel: 1, useDatabase: false, mode: 'wasm', isBackground: false})
+let client = new TdClient({readOnly: false, logVerbosityLevel: 1, fastUpdating: true, jsLogVerbosityLevel: 1, useDatabase: false, mode: 'wasm', isBackground: false})
 
 function App() {
   const [showTelephoneInput, setShowTelephoneInput] = React.useState(false)
@@ -15,7 +15,7 @@ function App() {
   const [botname, setBotname] = React.useState('')
   const [error, setError] = React.useState('')
   const [token, setToken] = React.useState('')
-//  console.log(client)
+  const [botLink, setBotLink] = React.useState('')
   
   const botnameRef = React.useRef('')
 
@@ -24,17 +24,20 @@ function App() {
   }, [botname])
 
   React.useEffect(() => {
-    client.onUpdate = update => {
-//      console.log('update', update)
+    client.onUpdate = async update => {
+      try {
+
+      // console.log('update', update)
       if (update.error) {
         console.error(update.error)
       }
       if (update['@type'] === 'updateAuthorizationState') {
         const authState = update.authorization_state['@type']
-        console.log(authState)
+        console.log('authState: ', authState)
         if (authState === 'authorizationStateWaitTdlibParameters') {
           send({
             '@type': 'setTdlibParameters',
+            'use_test_dc': true,
             'api_id': config.REACT_APP_TELEGRAM_API_ID,
             'api_hash': config.REACT_APP_TELEGRAM_API_HASH,
             'system_language_code': 'en',
@@ -68,6 +71,26 @@ function App() {
           setShowCodeInput(true)
         } else if (authState === 'authorizationStateReady') {
           setReady(true)
+        } else if (authState === 'authorizationStateLoggingOut') {
+          send({
+            '@type': 'close'
+          })
+        } else if (authState === 'authorizationStateClosed') {
+          setShowTelephoneInput(true)
+        /*
+          client = new TdClient({readOnly: false, logVerbosityLevel: 1, fastUpdating: true, jsLogVerbosityLevel: 1, useDatabase: false, mode: 'wasm', isBackground: false})
+          send({
+            '@type': 'setTdlibParameters',
+            'api_id': config.REACT_APP_TELEGRAM_API_ID,
+            'api_hash': config.REACT_APP_TELEGRAM_API_HASH,
+            'system_language_code': 'en',
+            'device_model': 'desktop',
+            'application_version': '1',
+          })
+          */
+          send({
+            '@type': 'getAuthorizationState',
+          })
         }
       } else if (update['@type'] === 'updateNewMessage') {
         const message = update.message
@@ -105,15 +128,43 @@ function App() {
           } else if (theMessage.includes('Done! Congratulations')) {
             const _token = parseToken(theMessage)
             if (_token !== -1) {
-              setToken(_token)
+              const res = await saveToken(_token, botnameRef.current)
+              if (res.status === 200) {
+                setBotLink('https://t.me/' + botnameRef.current + '_bot')
+              }
             } else {
               setError('Error parsing token')
             }
           }
         }
       }
+      } catch (e) {
+        console.error(e)
+      }
     }
   }, [])
+
+  async function saveToken(_token, botname) {
+    try {
+      if (_token) {
+        const res = await fetch('https://k.lillo.ai/api/telegram/newagent', {
+          method: 'POST',
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            botName: botname,
+            botUsername: botname + '_bot',
+            token: _token,
+          })
+        })
+        return await res.json()
+      }
+    } catch (e) {
+      console.error(e)
+      return null
+    }
+  }
 
   function parseToken(msg) {
     const key1 = 'Use this token to access the HTTP API:'
@@ -173,7 +224,7 @@ function App() {
 
   async function handlePhoneNumber() {
     console.log(telephone)
-    if (telephone.length > 10) {
+    if (telephone.length > 5) {
       send({
         '@type': 'setAuthenticationPhoneNumber',
         phone_number: telephone,
@@ -225,12 +276,13 @@ function App() {
             </button>
           </div>
         )}
-        {token && (
+        {botLink && (
           <div>
-            <h1>Token</h1>
-            <p>{token}</p>
+            <h1>New agent:</h1>
+            <p>{botLink}</p>
           </div>
         )}
+
         <button onClick={handleLogout}>
           Logout
         </button>
