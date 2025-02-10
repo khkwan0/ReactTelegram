@@ -192,13 +192,12 @@ function App() {
       })
     }
   }
-/*
+
   async function handleLogout() {
     send({
       '@type': 'logOut'
     })
   }
-  */
 
   return (
     <div className="App">
@@ -232,6 +231,9 @@ function App() {
             <p>{token}</p>
           </div>
         )}
+        <button onClick={handleLogout}>
+          Logout
+        </button>
 
         <img src={logo} className="App-logo" alt="logo" />
       </header>
