@@ -40,7 +40,7 @@ function App() {
             'system_language_code': 'en',
             'device_model': 'desktop',
             'application_version': '1',
-            'use_proxy': true,
+            // 'use_proxy': true,
             /*
             parameters: {
               'database_directory': './tdlib',
@@ -131,12 +131,8 @@ function App() {
     }
   }
   async function send(request) {
-    try {
-      console.log(request)
-      client.send(request)
-    } catch (e) {
-      console.log(e)
-    }
+    console.log('send request: ', request)
+    client.send(request)
   }
 
   async function sendToBotFather() {
@@ -196,12 +192,13 @@ function App() {
       })
     }
   }
-
+/*
   async function handleLogout() {
     send({
       '@type': 'logOut'
     })
   }
+  */
 
   return (
     <div className="App">
@@ -235,9 +232,6 @@ function App() {
             <p>{token}</p>
           </div>
         )}
-        <button onClick={handleLogout}>
-          Logout
-        </button>
 
         <img src={logo} className="App-logo" alt="logo" />
       </header>
